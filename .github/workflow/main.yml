@@ -1,0 +1,35 @@
+name: Ingest Workflow to Port
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'
+
+jobs:
+  ingest_workflow_data_to_port_job:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Python environment
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.8'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade setuptools
+          pip install --no-cache-dir -r requirements.txt
+      - name: Run Script
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: |
+          echo "Getting Things Ready"
+          python ingest.py
+  report-to-channel:
+    needs: build
+    with:
+      ENV: Production
+      APP_NAME: "AWS Alarm Reporter"
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
